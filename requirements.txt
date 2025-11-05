@@ -1,0 +1,15 @@
+# PNML parsing
+xmltodict
+
+# Graph modeling
+networkx
+
+# Symbolic reasoning (BDD)
+pyeda
+
+# Optimization (ILP)
+pulp
+
+# Data analysis & visualization
+pandas
+matplotlib
