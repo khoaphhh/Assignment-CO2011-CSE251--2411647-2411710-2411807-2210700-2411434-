@@ -4,6 +4,6 @@ pyeda
 # Task 4, 5: Optimization (ILP)
 pulp
 
-# Data analysis & visualization
-pandas
+# Additional libs
+pytest
 matplotlib
