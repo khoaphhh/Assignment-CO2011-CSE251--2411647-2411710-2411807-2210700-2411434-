@@ -58,27 +58,34 @@ def test_file(file_path):
         # Khởi tạo đối tượng BDD
         sym_net = SymbolicReachabilityPyEDA()
         
-        # --- QUAN TRỌNG: COPY DỮ LIỆU ---
-        # Chuyển dữ liệu từ net (Task 1) sang sym_net để không phải parse lại
+        # Copy dữ liệu từ net (Task 1) sang sym_net
         sym_net.places = net.places
         sym_net.transitions = net.transitions
         sym_net.arcs = net.arcs
         
         # Chạy tính toán BDD
-        bdd_count, bdd_time = sym_net.compute_reachable()
+        bdd_count, bdd_time, formulas = sym_net.compute_reachable(return_formula=True)
         
         print(f"✅ Hoàn thành.")
-        print(f"   👉 Tổng số trạng thái (Symbolic): {bdd_count}")
-        print(f"   ⏱️ Thời gian tính toán: {bdd_time:.4f} giây")
+        print(f"   Tổng số trạng thái (Symbolic): {bdd_count}")
+        print(f"   Thời gian tính toán: {bdd_time:.4f} giây")
+        print(f"   Công thức symbolic:")
+        print(f"      - Initial Marking: {formulas['initial']}")
+        print(f"      - Reachable Set: {formulas['final']}")
+        print(f"      - Iterations: {formulas['iterations']}")
         
-        # --- SO SÁNH KẾT QUẢ ---
-        print(f"\n[Validation]")
-        if explicit_count == bdd_count:
-            print(f"   ✅ KẾT QUẢ KHỚP NHAU! ({explicit_count})")
+        # --- SO SÁNH KẾT QUẢ (chỉ khi network hợp lệ) ---
+        if is_consistent and explicit_count > 0:
+            print(f"\n[Validation]")
+            if explicit_count == bdd_count:
+                print(f"   ✅ KẾT QUẢ KHỚP NHAU! ({explicit_count})")
+            else:
+                print(f"   ⚠️ CẢNH BÁO: LỆCH KẾT QUẢ!")
+                print(f"      Explicit: {explicit_count}")
+                print(f"      Symbolic: {bdd_count}")
         else:
-            print(f"   ⚠️ CẢNH BÁO: LỆCH KẾT QUẢ!")
-            print(f"      Explicit: {explicit_count}")
-            print(f"      Symbolic: {bdd_count}")
+            print(f"\n[Validation]")
+            print(f"   ⚠️ Không thể so sánh: Network không hợp lệ")
             
     except Exception as e:
         print(f"❌ Lỗi Task 3: {e}")
