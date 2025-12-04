@@ -9,9 +9,6 @@
     Tải: pip install -r requirements.txt
     cập nhật thư viện: pip install --upgrade -r requirements.txt
 
-# Test task 1
-    python src/pnml_parser.py examples/simple_example.pnml 
-    python src/pnml_parser.py examples/deadlock_example.pnml
-    python src/pnml_parser.py examples/invalid_example.pnml
+
 # chạy chương trình
     python src/main.py

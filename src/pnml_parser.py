@@ -90,12 +90,10 @@ class PetriNet:
                 errors.append(f"Arc nối 2 transition: '{src}' -> '{tgt}'")
 
         if errors:
-            print("\nInvalid Petri Net:")
             for e in errors:
                 print(f"  - {e}")
             return False # Trả về False (thất bại)
         else:
-            print("\nMạng Petri hợp lệ.")
             return True # Trả về True (thành công)
 
     def summary(self):

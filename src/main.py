@@ -1,10 +1,43 @@
 import os
 import sys
+import time
 
 from reachability_explicit import ReachabilityNet
 from reachability_bdd import SymbolicReachabilityPyEDA
 from ilp_deadlock import DeadlockDetector
+from optimization import OptimizationReachability
 
+
+# ==============================
+# HÀM PARSE INPUT CỦA NGƯỜI DÙNG
+# ==============================
+def parse_objective_input(user_input, places):
+    """
+    Parse chuỗi người dùng nhập dạng:
+       p1=2 p3=-1 p5=10
+    Trả về dict: { "p1": 2, "p3": -1, "p5": 10 }
+    """
+    weights = {}
+
+    if not user_input.strip():
+        # Empty -> dùng mặc định: tất cả trọng số = 1
+        return {p: 1 for p in places}
+
+    parts = user_input.split()
+    for part in parts:
+        if "=" not in part:
+            print(f"⚠️ Bỏ qua mục tiêu không hợp lệ: {part}")
+            continue
+        place, val = part.split("=")
+        if place not in places:
+            print(f"⚠️ Place '{place}' không tồn tại trong PNML -> bỏ qua")
+            continue
+        try:
+            weights[place] = int(val)
+        except:
+            print(f"⚠️ Trọng số '{val}' không hợp lệ -> bỏ qua")
+
+    return weights
 
 def test_file(file_path):
     filename = os.path.basename(file_path)
@@ -14,15 +47,13 @@ def test_file(file_path):
 
     net = ReachabilityNet()
 
-    print(f"\n[Task 1] Parsing {filename}...")
+    print(f"\n[Task 1] Parsing {filename}")
     if not net.parse_pnml(file_path):
         print("Parsing failed. Skipping this file.")
         return
 
-    print("Summary:")
     net.summary()
 
-    print("\nChecking Consistency...")
     is_consistent = net.check_consistency()
 
     if not is_consistent:
@@ -31,13 +62,12 @@ def test_file(file_path):
     else:
         print("Task 1 Passed: Network is valid.")
 
-        print(f"\n[Task 2] Computing Reachability Graph (BFS)...")
+        print(f"\n[Task 2] Computing Reachability Graph (BFS)")
         try:
             net.build_pre_post()
             reachable_markings = net.bfs()
             explicit_count = len(reachable_markings)
 
-            print(f"Task 2 Completed.")
             print(f"   Total reachable states: {explicit_count}")
 
             if explicit_count <= 20:
@@ -52,7 +82,7 @@ def test_file(file_path):
             print(f"Task 2 Error: {e}")
             explicit_count = 0
 
-    print(f"\n[Task 3] Symbolic Reachability (BDD)...")
+    print(f"\n[Task 3] Symbolic Reachability (BDD)")
     try:
         sym_net = SymbolicReachabilityPyEDA()
 
@@ -62,13 +92,12 @@ def test_file(file_path):
 
         bdd_count, bdd_time, formulas = sym_net.compute_reachable(return_formula=True)
 
-        print(f"Completed.")
         print(f"   Total states (Symbolic): {bdd_count}")
         print(f"   Computation time: {bdd_time:.4f}s")
         print(f"   Symbolic formula:")
         print(f"      - Initial: {formulas['initial']}")
         print(f"      - Final: {formulas['final']}")
-        print(f"      - Iterations: {formulas['iterations']}")
+        #print(f"      - Iterations: {formulas['iterations']}")
 
         if is_consistent and explicit_count > 0:
             print(f"\n[Validation]")
@@ -110,6 +139,45 @@ def test_file(file_path):
 
     except Exception as error:
         print(f"Task 4 Error: {error}")
+
+# --- TASK 5: Optimization ---
+    if is_consistent:
+        print(f"\n[Task 5] Optimization Over Reachable Markings...")
+
+        try:
+            opt_net = OptimizationReachability()
+            opt_net.places = net.places
+            opt_net.transitions = net.transitions
+            opt_net.arcs = net.arcs
+            opt_net.build_pre_post()
+
+            # 🧠 YÊU CẦU NGƯỜI DÙNG NHẬP OBJECTIVE
+            print("\nNhập hàm mục tiêu dạng 'p1=2 p3=-1 p4=5'")
+            print("Hoặc nhấn ENTER để dùng mặc định: tất cả trọng số = 1")
+            print(f"Các place trong mạng: {list(net.places.keys())}")
+
+            user_input = input("Objective weights: ")
+
+            weights = parse_objective_input(user_input, net.places)
+
+            print(f"➡️  Objective function: maximize {weights}")
+
+            start_time = time.time()
+            optimal_marking, optimal_value, total_markings = opt_net.optimize_marking(weights)
+            runtime = time.time() - start_time
+
+            if optimal_marking is None:
+                print("❌ Không tìm được marking tối ưu.")
+            else:
+                print(f"- Optimal value: {optimal_value}")
+                print(f"- Optimal marking: {optimal_marking}")
+                print(f"- Running time: {runtime:.6f}s")
+
+        except Exception as e:
+            print(f"❌ Lỗi Task 5: {e}")
+
+    else:
+        print("\n[Task 5] Skip optimization (network invalid)")
 
 
 def main():
